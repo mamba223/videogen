@@ -10,7 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN python -c "from diffusers import WanPipeline; WanPipeline.from_pretrained('Wan-AI/Wan2.1-T2V-1.3B')"
 
 COPY gpu-server/ .
+COPY handler.py .
 
 # Serverless handler (not the plain HTTP server)
 ENV MODE=runpod
-CMD ["python", "-u", "runpod_handler.py"]
+CMD ["python", "-u", "handler.py"]
