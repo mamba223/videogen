@@ -1,6 +1,6 @@
 # Root-level Dockerfile so RunPod's "Import Git Repository" builder finds it.
 # Builds the GPU video-generation worker from ./gpu-server as a RunPod serverless handler.
-FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 WORKDIR /app
 COPY gpu-server/requirements.txt .
