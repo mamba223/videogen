@@ -1,0 +1,10 @@
+diffusers>=0.33
+transformers>=4.45
+accelerate
+sentencepiece
+protobuf
+imageio
+imageio-ffmpeg
+fastapi
+uvicorn[standard]
+runpod

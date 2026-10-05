@@ -1,0 +1,17 @@
+{
+  "name": "reelforge-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Claims scene jobs from the Supabase queue, renders them on a GPU backend and uploads the clips.",
+  "scripts": {
+    "start": "node --env-file=.env index.mjs",
+    "dev": "node --env-file=.env --watch index.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "ReelForge",
+    "slug": "reelforge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0d0a1a",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.reelforge.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0d0a1a"
+      },
+      "package": "com.reelforge.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
