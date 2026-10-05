@@ -13,4 +13,6 @@ COPY handler.py .
 
 # Serverless handler (not the plain HTTP server)
 ENV MODE=runpod
+ENV HF_HUB_DISABLE_XET=1
+ENV HF_HUB_ENABLE_HF_TRANSFER=0
 CMD ["python", "-u", "handler.py"]

@@ -10,4 +10,6 @@ COPY . .
 
 # MODE=runpod for RunPod serverless, anything else for the plain HTTP server
 ENV MODE=http
+ENV HF_HUB_DISABLE_XET=1
+ENV HF_HUB_ENABLE_HF_TRANSFER=0
 CMD ["sh", "-c", "if [ \"$MODE\" = \"runpod\" ]; then python -u runpod_handler.py; else uvicorn server:app --host 0.0.0.0 --port 8000; fi"]

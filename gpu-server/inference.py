@@ -8,6 +8,9 @@ Supports open-source video generation models:
 Shared by the HTTP server (Vast.ai, self-hosted GPU) and RunPod serverless handler.
 """
 import os
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+
 import tempfile
 import threading
 import torch

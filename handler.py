@@ -4,6 +4,10 @@ import base64
 import os
 import sys
 
+# Disable Hugging Face experimental xet background writer which crashes on multi-GB model weights
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+
 # In the Docker image gpu-server/ is copied to /app; locally it sits next to this file.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpu-server"))
 
