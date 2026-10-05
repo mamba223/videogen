@@ -30,12 +30,12 @@ _gpu_lock = threading.Lock()  # one generation at a time per GPU
 
 def get_default_model_id(family: str) -> str:
     defaults = {
-        "wan-2.1": "Wan-AI/Wan2.1-T2V-1.3B",
+        "wan-2.1": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
         "ltx-video": "Lightricks/LTX-Video",
         "hunyuan": "tencent/HunyuanVideo",
         "cogvideox": "THUDM/CogVideoX-5b",
     }
-    return defaults.get(family, "Wan-AI/Wan2.1-T2V-1.3B")
+    return defaults.get(family, "Wan-AI/Wan2.1-T2V-1.3B-Diffusers")
 
 
 def load(model_family: str = MODEL_FAMILY):
@@ -64,7 +64,7 @@ def load(model_family: str = MODEL_FAMILY):
             _pipeline = WanPipeline.from_pretrained(target_id, torch_dtype=torch.bfloat16).to("cuda")
             try:
                 _i2v_pipeline = WanImageToVideoPipeline.from_pretrained(
-                    "Wan-AI/Wan2.1-I2V-14B-480P" if "14B" in target_id else target_id,
+                    "Wan-AI/Wan2.1-I2V-14B-480P-Diffusers" if "14B" in target_id else target_id,
                     torch_dtype=torch.bfloat16
                 ).to("cuda")
             except Exception:

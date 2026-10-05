@@ -6,8 +6,7 @@ WORKDIR /app
 COPY gpu-server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Bake the weights into the image so cold starts don't download weights at runtime
-RUN python -c "from diffusers import WanPipeline; WanPipeline.from_pretrained('Wan-AI/Wan2.1-T2V-1.3B')"
+# Dependencies are installed; weights will be loaded and cached at runtime on the GPU worker
 
 COPY gpu-server/ .
 COPY handler.py .
