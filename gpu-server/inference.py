@@ -23,7 +23,7 @@ MODEL_ID = os.getenv("MODEL_ID", "")
 STEPS = int(os.getenv("INFERENCE_STEPS", "30"))
 WIDTH = int(os.getenv("WIDTH", "704"))   # must be divisible by 32
 HEIGHT = int(os.getenv("HEIGHT", "480"))  # must be divisible by 32
-FPS = int(os.getenv("FPS", "16"))
+FPS = int(os.getenv("FPS", "24"))
 NEGATIVE = "worst quality, inconsistent motion, blurry, jittery, distorted, watermark, text, low resolution"
 
 _pipeline = None
@@ -128,7 +128,7 @@ def generate_mp4(
         fps = 24
         num_frames = (int(duration_sec * fps) // 8) * 8 + 1  # LTX needs 8k+1 frames
     elif MODEL_FAMILY in ("wan-2.1", "wan", "wan-1.3b"):
-        fps = 16
+        fps = FPS
         num_frames = int(duration_sec * fps)
     elif MODEL_FAMILY in ("hunyuan", "hunyuanvideo"):
         fps = 24
