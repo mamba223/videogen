@@ -118,10 +118,27 @@ def generate_mp4(
     duration_sec: int = 5,
     references=None,
     seed=None,
-    model: str = "wan-2.1"
+    model: str = "wan-2.1",
+    dialogue: str | None = None,
+    voice: str | None = None,
 ) -> bytes:
     load(model)
     generator = torch.Generator("cuda").manual_seed(int(seed)) if seed is not None else None
+
+    # Synthesize speech audio first if character dialogue is provided
+    audio_path = None
+    if dialogue and dialogue.strip():
+        try:
+            import lipsync
+            audio_path = lipsync.generate_speech(dialogue.strip(), voice_id=voice or "aria-ambient")
+            audio_dur = lipsync.get_audio_duration(audio_path)
+            print(f"[Inference] Synthesized dialogue audio ({audio_dur:.2f}s): {audio_path}")
+            if audio_dur > duration_sec:
+                duration_sec = min(int(round(audio_dur + 0.5)), 12)
+                print(f"[Inference] Expanded scene duration to {duration_sec}s for complete speech.")
+        except Exception as e:
+            print(f"[Inference WARN] Speech synthesis failed: {e}. Continuing without audio.")
+            audio_path = None
 
     # Calculate frame counts according to model architecture
     if MODEL_FAMILY in ("ltx-video", "ltx"):
@@ -161,8 +178,32 @@ def generate_mp4(
         os.close(fd)
         try:
             export_to_video(out.frames[0], path, fps=fps)
-            with open(path, "rb") as f:
-                return f.read()
+
+            # If dialogue audio is available, perform neural lip synchronization
+            if audio_path and os.path.exists(audio_path):
+                synced_fd, synced_path = tempfile.mkstemp(suffix=".mp4")
+                os.close(synced_fd)
+                try:
+                    import lipsync
+                    print("[Inference] Synchronizing character mouth movement to audio...")
+                    lipsync.lip_sync_video(path, audio_path, synced_path)
+                    with open(synced_path, "rb") as f:
+                        return f.read()
+                except Exception as e:
+                    print(f"[Inference WARN] Lip sync error: {e}. Returning base video.")
+                    with open(path, "rb") as f:
+                        return f.read()
+                finally:
+                    if os.path.exists(synced_path):
+                        os.remove(synced_path)
+            else:
+                with open(path, "rb") as f:
+                    return f.read()
         finally:
             if os.path.exists(path):
                 os.remove(path)
+            if audio_path and os.path.exists(audio_path):
+                try:
+                    os.remove(audio_path)
+                except Exception:
+                    pass

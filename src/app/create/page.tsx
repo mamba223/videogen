@@ -10,6 +10,7 @@ import { AUDIO_PRESETS } from "@/lib/audioPresets";
 import { VIDEO_ENGINES, VIDEO_MODELS, DEFAULT_ENGINE } from "@/lib/videoModels";
 import { CAMERA_MOTIONS, applyCameraMotion } from "@/lib/cameraControls";
 import { VOICE_PRESETS, auditionVoice, stopVoiceAudition, type VoicePreset } from "@/lib/voicePresets";
+import { stitchAndDownloadVideo } from "@/lib/stitcher";
 import Link from "next/link";
 
 const MAX_SCENES = 120; // ~10 minutes
@@ -53,6 +54,8 @@ export default function Create() {
   const [msg, setMsg] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<string>("");
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [merging, setMerging] = useState(false);
+  const [mergePct, setMergePct] = useState(0);
 
   useEffect(() => {
     listSeries().then(async (list) => {
@@ -223,12 +226,18 @@ export default function Create() {
         finalPrompt = applyCameraMotion(raw, quickCamera, selectedModel);
         finalScenes = [{ prompt: finalPrompt, narration: "", cameraMotion: quickCamera, durationSec: duration }];
       } else {
-        finalPrompt = applyCameraMotion(scenes[0].prompt, scenes[0].cameraMotion || "none", selectedModel);
-        finalScenes = scenes.map((s) => ({
-          ...s,
-          prompt: applyCameraMotion(s.prompt, s.cameraMotion || "none", selectedModel),
-          durationSec: s.durationSec || duration,
-        }));
+        finalScenes = scenes.map((s) => {
+          const dialogueAction = s.narration?.trim()
+            ? `, character speaking aloud: "${s.narration.trim()}" with natural lip movement and expressive emotion`
+            : "";
+          const fullPrompt = applyCameraMotion(s.prompt + dialogueAction, s.cameraMotion || "none", selectedModel);
+          return {
+            ...s,
+            prompt: fullPrompt,
+            durationSec: s.durationSec || duration,
+          };
+        });
+        finalPrompt = finalScenes[0]?.prompt || "";
         let seriesBible = seriesList.find((s) => s.id === seriesId)?.bible;
         if (seriesId === "new") {
           sid = await createSeries(newSeries.trim(), bible);
@@ -517,16 +526,16 @@ export default function Create() {
                   </div>
                 </div>
 
-                {/* Narration voiceover text */}
+                {/* Character dialogue text */}
                 <div>
                   <label className="field-label" style={{ margin: "2px 0 4px" }}>
-                    Voiceover Narration <small>(spoken during this shot)</small>
+                    Character Dialogue <small>(what the character speaks in this scene)</small>
                   </label>
                   <input
                     type="text"
                     value={s.narration}
                     onChange={(e) => updateScene(n, { narration: e.target.value })}
-                    placeholder="e.g. The tide whispered warnings that no one could decipher..."
+                    placeholder='e.g. "We need to get out of here, now!"'
                     style={{ fontSize: ".88rem" }}
                   />
                 </div>
@@ -778,6 +787,32 @@ export default function Create() {
                 showExport
               />
             </div>
+
+            {job.clips.length > 1 && (
+              <div style={{ marginTop: 14 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ width: "100%", maxWidth: 320, padding: "10px 16px", fontSize: ".9rem" }}
+                  disabled={merging}
+                  onClick={async () => {
+                    setMerging(true);
+                    setMergePct(0);
+                    try {
+                      await stitchAndDownloadVideo(job.clips, job.title || "story-episode", (pct) => setMergePct(pct));
+                    } catch (err) {
+                      console.error("Merge error:", err);
+                      alert("Could not merge clips. You can download individual clips directly.");
+                    } finally {
+                      setMerging(false);
+                      setMergePct(0);
+                    }
+                  }}
+                >
+                  {merging ? `⏳ Merging All Scenes (${mergePct}%)…` : `🎬 Merge & Download Full Story (${job.clips.length} Scenes .MP4)`}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

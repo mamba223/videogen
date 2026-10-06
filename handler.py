@@ -10,6 +10,8 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
 # Auto-detect mount with most free space (/runpod-volume, /workspace, or /) and direct HF_HOME / TMPDIR there
 import shutil
+os.system("df -h")
+
 candidates = ["/runpod-volume", "/workspace", "/tmp", "/"]
 best_dir = "/"
 max_free = 0
@@ -34,26 +36,43 @@ print(f"[Storage] Directed HuggingFace cache & TMPDIR to: {cache_dir} ({max_free
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpu-server"))
 
 import runpod  # noqa: E402
-
 import inference  # noqa: E402
 
-inference.load()  # load weights once per worker, not per job
+_loaded_model = None
 
+def ensure_model(model_name: str):
+    global _loaded_model
+    if _loaded_model != model_name:
+        print(f"[Worker] Loading model weights for {model_name}...")
+        inference.load(model_name)
+        _loaded_model = model_name
+        print(f"[Worker] Model {model_name} successfully loaded.")
 
 def handler(job):
-    data = job["input"]
-    duration = int(data.get("duration_sec", 5))
-    if duration not in (3, 5, 8):
-        return {"error": "duration_sec must be 3, 5 or 8"}
-    model = data.get("model", "wan-2.1")
-    mp4 = inference.generate_mp4(
-        prompt=data["prompt"],
-        duration_sec=duration,
-        references=data.get("references"),
-        seed=data.get("seed"),
-        model=model,
-    )
-    return {"video_base64": base64.b64encode(mp4).decode()}
+    try:
+        data = job.get("input", {})
+        duration = int(data.get("duration_sec", 5))
+        if duration not in (3, 5, 8):
+            return {"error": "duration_sec must be 3, 5 or 8"}
+        model = data.get("model", "wan-2.1")
+        dialogue = data.get("dialogue") or data.get("narration")
+        voice = data.get("voice") or data.get("voice_id")
+        ensure_model(model)
+        mp4 = inference.generate_mp4(
+            prompt=data["prompt"],
+            duration_sec=duration,
+            references=data.get("references"),
+            seed=data.get("seed"),
+            model=model,
+            dialogue=dialogue,
+            voice=voice,
+        )
+        return {"video_base64": base64.b64encode(mp4).decode()}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
 
-
+print("[Worker] RunPod serverless handler initialized and listening for jobs...")
 runpod.serverless.start({"handler": handler})
+

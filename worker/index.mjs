@@ -49,11 +49,14 @@ async function processScene(scene) {
       .select("user_id, style, reference_asset_ids, model").eq("id", scene.video_id).single();
     if (error) throw error;
     const prompt = video.style ? `${video.style}. Scene: ${scene.prompt}` : scene.prompt;
+    const dialogue = scene.narration?.trim() || undefined;
     const mp4 = await provider.generate({
       prompt,
       durationSec: scene.duration_sec,
       references: await referenceUrls(video.reference_asset_ids),
       model: video.model || "wan-2.1",
+      dialogue,
+      voice: "aria-ambient",
     });
     const path = `${video.user_id}/${scene.video_id}/${scene.id}.mp4`;
     const up = await sb.storage.from("clips").upload(path, mp4, { contentType: "video/mp4", upsert: true });
@@ -76,7 +79,12 @@ async function loop() {
     let claimed = 0;
     if (free > 0) {
       const { data, error } = await sb.rpc("claim_scenes", { p_worker: WORKER_ID, p_limit: free });
-      if (error) console.error("claim failed:", error.message);
+      if (error) {
+        const detail = error.cause ? (error.cause.message || error.cause.code || error.cause) : error.message;
+        console.error(`claim failed (${detail}): check internet / Supabase status`);
+        await sleep(5000);
+        continue;
+      }
       for (const scene of data ?? []) {
         claimed++;
         running++;

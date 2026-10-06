@@ -16,6 +16,8 @@ class GenerateRequest(BaseModel):
     references: list[str] = []
     seed: int | None = None
     model: str = "wan-2.1"
+    dialogue: str | None = None
+    voice: str | None = None
 
 
 @app.on_event("startup")
@@ -51,6 +53,8 @@ def generate(req: GenerateRequest, authorization: str | None = Header(default=No
         duration_sec=req.duration_sec,
         references=req.references,
         seed=req.seed,
-        model=req.model
+        model=req.model,
+        dialogue=req.dialogue,
+        voice=req.voice,
     )
     return Response(content=mp4, media_type="video/mp4")

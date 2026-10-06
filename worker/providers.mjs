@@ -29,7 +29,7 @@ const mock = {
 
 const http = {
   name: "http",
-  async generate({ prompt, durationSec, references, seed, model }) {
+  async generate({ prompt, durationSec, references, seed, model, dialogue, voice }) {
     const base = requireEnv("GPU_ENDPOINT_URL").replace(/\/$/, "");
     const res = await fetch(`${base}/generate`, {
       method: "POST",
@@ -37,7 +37,7 @@ const http = {
         "Content-Type": "application/json",
         ...(process.env.GPU_API_KEY ? { Authorization: `Bearer ${process.env.GPU_API_KEY}` } : {}),
       },
-      body: JSON.stringify({ prompt, duration_sec: durationSec, references, seed, model }),
+      body: JSON.stringify({ prompt, duration_sec: durationSec, references, seed, model, dialogue, voice }),
       signal: AbortSignal.timeout(Number(process.env.GPU_TIMEOUT_MS ?? 480000)),
     });
     if (!res.ok) throw new Error(`GPU server ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -47,7 +47,7 @@ const http = {
 
 const runpod = {
   name: "runpod",
-  async generate({ prompt, durationSec, references, seed, model }) {
+  async generate({ prompt, durationSec, references, seed, model, dialogue, voice }) {
     let rawId = requireEnv("RUNPOD_ENDPOINT_ID").trim();
     const urlMatch = rawId.match(/runpod\.ai\/v2\/([a-zA-Z0-9_-]+)/);
     const id = urlMatch ? urlMatch[1] : rawId.replace(/^https?:\/\/[^\/]+\//, "").split("/")[0].trim();
@@ -56,7 +56,7 @@ const runpod = {
     const base = `https://api.runpod.ai/v2/${id}`;
     const run = await fetch(`${base}/run`, {
       method: "POST", headers,
-      body: JSON.stringify({ input: { prompt, duration_sec: durationSec, references, seed, model } }),
+      body: JSON.stringify({ input: { prompt, duration_sec: durationSec, references, seed, model, dialogue, voice } }),
     });
     if (!run.ok) throw new Error(`RunPod run ${run.status}: ${await run.text()}`);
     const { id: jobId } = await run.json();

@@ -8,3 +8,8 @@ imageio-ffmpeg
 fastapi
 uvicorn[standard]
 runpod
+edge-tts
+opencv-python-headless
+librosa
+soundfile
+scipy
